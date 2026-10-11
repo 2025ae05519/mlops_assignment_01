@@ -1,0 +1,20 @@
+# Optional Ingress (alternative to the LoadBalancer service).
+# Minikube: `minikube addons enable ingress`, then add
+# "<minikube ip> heart-api.local" to /etc/hosts and open http://heart-api.local/docs
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: heart-disease-api
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: heart-api.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: heart-disease-api
+                port:
+                  number: 80
