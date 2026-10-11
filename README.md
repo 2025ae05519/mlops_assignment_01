@@ -1,7 +1,7 @@
 # MLOps Assignment 01 — Heart Disease Classification
 
 ## Objective
-Build a reproducible binary classifier for the UCI Heart Disease dataset, track experiments with MLflow, package inference behind a FastAPI service, test the service, and provide container/CI/deployment configuration.
+Build a reproducible binary classifier for the UCI Heart Disease dataset, track experiments with MLflow, package inference behind a FastAPI service, test the service, and provide container/CI/deployment configuration...
 
 ## Dataset and target
 The project uses UCI Heart Disease repository ID 45. Target values are mapped as `0 -> no disease` and values greater than `0 -> disease present`. The dataset is downloaded by `ucimlrepo` when a cached `data/raw/heart_disease_uci_raw.csv` is not present.
