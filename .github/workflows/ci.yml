@@ -1,0 +1,83 @@
+name: mlops-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Lint, train and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint source and tests
+        run: ruff check --select F src tests
+
+      - name: Train and generate model artifacts
+        run: python -m src.train | tee training.log
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -v --junitxml=test-results.xml
+
+      - name: Upload model, metrics, plots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts-${{ github.run_number }}
+          path: |
+            artifacts/
+            data/processed/
+            data/raw/
+            training.log
+            test-results.xml
+          if-no-files-found: warn
+
+  docker:
+    name: Build and smoke-test Docker image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t heart-disease-api:ci .
+
+      - name: Run container
+        run: docker run -d --name heart-api -p 8000:8000 heart-disease-api:ci
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 30); do
+            if curl -fsS http://localhost:8000/health; then exit 0; fi
+            sleep 2
+          done
+          echo "API did not become healthy"; exit 1
+
+      - name: Call /predict with sample input
+        run: scripts/smoke_test.sh http://localhost:8000 3
+
+      - name: Check /metrics
+        run: curl -fsS http://localhost:8000/metrics/ | grep heart_api_predictions_total
+
+      - name: Container logs
+        if: always()
+        run: docker logs heart-api
