@@ -16,7 +16,7 @@ The project uses UCI Heart Disease repository ID 45. Target values are mapped as
 
 ## Project structure
 - `notebooks/heart_disease_experiment.ipynb`: exploration, plots, experimentation, and assignment record.
-- `src/train.py`: data download and cleaning, train/test split, cross-validation, Random Forest tuning, model comparison, MLflow tracking (metrics, CSVs, ROC and confusion matrix plots), and model artifact generation.
+- `src/train.py`: data download and cleaning, preprocessing pipelines (median imputation, scaling for Logistic Regression, one-hot encoding of `cp`, `restecg`, `slope`, `thal`), train/test split, cross-validation, Random Forest tuning, model comparison, MLflow tracking (metrics, CSVs, ROC and confusion matrix plots), and model artifact generation.
 - `src/predict.py`: loads the trained pipeline and produces a prediction with confidence (inference script).
 - `src/api.py`: FastAPI `/health`, `/predict` and Prometheus `/metrics` endpoints with request logging.
 - `tests/`: unit tests for data cleaning (`test_data.py`), model code (`test_model.py`) and the API (`test_api.py`).
@@ -73,7 +73,7 @@ python -m uvicorn src.api:app --host 0.0.0.0 --port 8000
 
 ```bash
 curl -X POST http://localhost:8000/predict -H "Content-Type: application/json" -d @sample_request.json
-# {"prediction":0,"label":"disease_not_detected","confidence":0.62,"positive_class_probability":0.38}
+# {"prediction":0,"label":"disease_not_detected","confidence":0.82,"positive_class_probability":0.18}
 ```
 
 The prediction request body is JSON with a `features` object containing every feature in `artifacts/feature_columns.json`. Feature names must match exactly. The API logs each request method, path, response status, and duration, and counts requests, latency and predictions in Prometheus metrics.
@@ -110,6 +110,6 @@ Current selected model from `artifacts/final_metrics.json`: Logistic Regression.
 - Precision: 0.8125
 - Recall: 0.9286
 - F1-score: 0.8667
-- ROC-AUC: 0.9502
+- ROC-AUC: 0.9578
 
 Screenshots for CI, MLflow, Docker, Kubernetes and monitoring go in `screenshots/` (the list is in [docs/RUNBOOK.md](docs/RUNBOOK.md)).

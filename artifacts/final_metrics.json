@@ -4,8 +4,8 @@
   "precision": 0.8125,
   "recall": 0.9285714285714286,
   "f1": 0.8666666666666667,
-  "roc_auc": 0.9502164502164503,
-  "cv_roc_auc_mean": 0.8963053050009572,
+  "roc_auc": 0.9577922077922079,
+  "cv_roc_auc_mean": 0.9068725155681678,
   "selected_model": "logistic_regression",
   "feature_columns": [
     "age",
@@ -23,8 +23,8 @@
     "thal"
   ],
   "best_random_forest_params": {
-    "model__max_depth": 5,
-    "model__min_samples_leaf": 2,
+    "model__max_depth": null,
+    "model__min_samples_leaf": 4,
     "model__n_estimators": 200
   }
 }

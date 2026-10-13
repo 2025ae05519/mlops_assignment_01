@@ -25,7 +25,7 @@ from sklearn.model_selection import (
     GridSearchCV, StratifiedKFold, cross_validate, train_test_split,
 )
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from ucimlrepo import fetch_ucirepo
 import joblib
 import matplotlib
@@ -43,6 +43,10 @@ for folder in (RAW_DIR, PROCESSED_DIR, ARTIFACTS_DIR, PLOTS_DIR):
 
 RANDOM_STATE = 42
 EXPERIMENT_NAME = "heart-disease-classification"
+# Nominal features coded as integers in the UCI data (chest pain type, resting
+# ECG result, ST slope, thalassemia). Their codes have no numeric order, so they
+# are one-hot encoded instead of being treated as continuous values.
+CATEGORICAL_FEATURES = ["cp", "restecg", "slope", "thal"]
 
 
 def load_dataset() -> tuple[pd.DataFrame, pd.Series, list[str]]:
@@ -111,27 +115,33 @@ def save_evaluation_plots(name: str, model: Pipeline, X_test, y_test) -> list[Pa
     return paths
 
 
+def build_preprocessor(features: list[str], scale: bool) -> ColumnTransformer:
+    """Impute and (optionally) scale numeric columns, impute and one-hot
+    encode the nominal columns listed in CATEGORICAL_FEATURES."""
+    categorical = [c for c in features if c in CATEGORICAL_FEATURES]
+    numeric = [c for c in features if c not in categorical]
+    numeric_steps = [("imputer", SimpleImputer(strategy="median"))]
+    if scale:
+        numeric_steps.append(("scaler", StandardScaler()))
+    transformers = [("numeric", Pipeline(numeric_steps), numeric)]
+    if categorical:
+        transformers.append(("categorical", Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+        ]), categorical))
+    return ColumnTransformer(transformers)
+
+
 def build_models(features: list[str]) -> tuple[Pipeline, Pipeline]:
     """Create the two sklearn pipelines used for comparison."""
-    scaled = ColumnTransformer([
-        ("numeric", Pipeline([
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler", StandardScaler()),
-        ]), features)
-    ])
-    unscaled = ColumnTransformer([
-        ("numeric", Pipeline([
-            ("imputer", SimpleImputer(strategy="median")),
-        ]), features)
-    ])
     lr = Pipeline([
-        ("preprocessor", scaled),
+        ("preprocessor", build_preprocessor(features, scale=True)),
         ("model", LogisticRegression(
             max_iter=2000, class_weight="balanced", random_state=RANDOM_STATE
         )),
     ])
     rf = Pipeline([
-        ("preprocessor", unscaled),
+        ("preprocessor", build_preprocessor(features, scale=False)),
         ("model", RandomForestClassifier(
             n_estimators=300, random_state=RANDOM_STATE,
             class_weight="balanced", min_samples_leaf=2

@@ -29,6 +29,9 @@ jobs:
         run: ruff check --select F src tests
 
       - name: Train and generate model artifacts
+        # shell: bash adds -o pipefail, so a training error fails this step
+        # instead of being hidden by tee's exit code.
+        shell: bash
         run: python -m src.train | tee training.log
 
       - name: Run tests

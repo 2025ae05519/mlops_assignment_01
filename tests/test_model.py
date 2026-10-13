@@ -59,3 +59,23 @@ def test_predict_confidence_matches_predicted_class():
     expected = p if result["prediction"] == 1 else 1 - p
     assert result["confidence"] == pytest.approx(expected)
     assert result["confidence"] >= 0.5
+
+
+def test_nominal_features_are_one_hot_encoded():
+    rng = np.random.default_rng(1)
+    X = pd.DataFrame({
+        "age": rng.integers(30, 80, size=60).astype(float),
+        "cp": rng.integers(1, 5, size=60).astype(float),
+        "thal": rng.choice([3.0, 6.0, 7.0], size=60),
+    })
+    X.loc[0, "thal"] = np.nan  # categorical missing values are imputed too
+    y = pd.Series(rng.integers(0, 2, size=60))
+    for model in build_models(list(X.columns)):
+        model.fit(X, y)
+        preprocessor = model.named_steps["preprocessor"]
+        assert preprocessor.transformers_[1][2] == ["cp", "thal"]
+        # 1 numeric column + 4 chest pain codes + 3 thal codes
+        assert preprocessor.transform(X).shape[1] == 8
+        # an unseen category must not break prediction
+        unseen = X.head(1).assign(cp=9.0)
+        assert model.predict_proba(unseen).shape == (1, 2)
