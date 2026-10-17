@@ -11,7 +11,7 @@ The project uses UCI Heart Disease repository ID 45. Target values are mapped as
 ## Submission links
 - Repository: https://github.com/2025ae05519/mlops_assignment_01
 - Report: [report/MLOps_Assignment_01_Report.docx](report/MLOps_Assignment_01_Report.docx)
-- Video: _add link_
+- Video: [Video Recording Link](https://drive.google.com/drive/folders/1WbEaivsih-v3Z93Vw_5S2taXXrXuTSgA)
 - API access: not publicly hosted; run it locally or on Minikube by following the Prayog Shala steps below.
 
 ## Project structure
